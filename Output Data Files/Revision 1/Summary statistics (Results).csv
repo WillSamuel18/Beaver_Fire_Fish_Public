@@ -1,0 +1,83 @@
+"statistic","value"
+"Rows in input file",195
+"Valley bottoms with HC ponds",186
+"HC ponds",414
+"Burned valley bottoms",87
+"Unburned valley bottoms",99
+"Pond density mean (ponds/km2)",7.44149398596237
+"Pond density SD",10.4431011824005
+"Pond area mean (m2)",2880.36586021505
+"Pond area SD",4902.76285935411
+"Valley bottom area (km2) burned mean",0.521684786011494
+"Valley bottom area (km2) burned SD",0.390520998324561
+"Valley bottom area (km2) unburned mean",0.744336807545455
+"Valley bottom area (km2) unburned SD",1.00443164344804
+"Valley bottom area (km2) t-test T",-2.03731152738362
+"Valley bottom area (km2) t-test DF",130.223644836331
+"Valley bottom area (km2) t-test p",0.0436448803720707
+"Pond density (ponds/km2) burned mean",7.70166139857471
+"Pond density (ponds/km2) burned SD",9.62270395857604
+"Pond density (ponds/km2) unburned mean",7.21286201730303
+"Pond density (ponds/km2) unburned SD",11.1581580654218
+"Pond density (ponds/km2) t-test T",0.320777877805593
+"Pond density (ponds/km2) t-test DF",183.939954327666
+"Pond density (ponds/km2) t-test p",0.748742873227244
+"Pond area (m2) burned mean",2061.69579310345
+"Pond area (m2) burned SD",2444.4148913217
+"Pond area (m2) unburned mean",3599.80319191919
+"Pond area (m2) unburned SD",6246.1790295191
+"Pond area (m2) t-test T",-2.26102199372848
+"Pond area (m2) t-test DF",130.613955837596
+"Pond area (m2) t-test p",0.0254116607880656
+"Time since burn mean (yr)",26.448275862069
+"Time since burn SD",19.9422180548271
+"Percent of burned VBs burned in 2004 (TSB = 13)",44.8275862068966
+"Percent of burned VBs burned since 2003 (TSB <= 14)",58.6206896551724
+"Burned VBs with burn severity data",49
+"percent_severe_burn mean (% of classified area)",6.63828242780382
+"percent_severe_burn SD",9.0361902848494
+"percent_severe_burn max",36.5313653136531
+"percent_moderate_burn mean (% of classified area)",24.3769842700291
+"percent_moderate_burn SD",15.1263186989678
+"percent_moderate_burn max",73.3485193621868
+"percent_mild_burn mean (% of classified area)",37.6927074700986
+"percent_mild_burn SD",16.2863490403783
+"percent_mild_burn max",77.4774774774775
+"percent_no_burn mean (% of classified area)",31.2920258320685
+"percent_no_burn SD",22.8817197439701
+"percent_no_burn max",98.1927710843374
+"percent_woody_cover burned mean",65.7258437641379
+"percent_woody_cover burned SD",8.23562796722008
+"percent_woody_cover unburned mean",67.6550904385859
+"percent_woody_cover unburned SD",11.8645907187174
+"percent_woody_cover t-test T",-1.30025216857389
+"percent_woody_cover t-test DF",174.981745131701
+"percent_woody_cover t-test p",0.195224565983336
+"BroadleafTree_2015_MEAN burned mean",7.20300893747674
+"BroadleafTree_2015_MEAN burned SD",5.2097950067908
+"BroadleafTree_2015_MEAN unburned mean",6.52673750148485
+"BroadleafTree_2015_MEAN unburned SD",5.69805373797778
+"BroadleafTree_2015_MEAN t-test T",0.84299666537298
+"BroadleafTree_2015_MEAN t-test DF",182.506993782873
+"BroadleafTree_2015_MEAN t-test p",0.400333747136716
+"ConiferTree_2015_MEAN burned mean",15.7857416152326
+"ConiferTree_2015_MEAN burned SD",8.10688839961782
+"ConiferTree_2015_MEAN unburned mean",21.9591548306768
+"ConiferTree_2015_MEAN unburned SD",6.85367249517174
+"ConiferTree_2015_MEAN t-test T",-5.54684610043516
+"ConiferTree_2015_MEAN t-test DF",167.358415284531
+"ConiferTree_2015_MEAN t-test p",1.1162083589131e-07
+"DeciduousShrub_2015_MEAN burned mean",28.4336389296163
+"DeciduousShrub_2015_MEAN burned SD",8.56891813899134
+"DeciduousShrub_2015_MEAN unburned mean",23.6956434479596
+"DeciduousShrub_2015_MEAN unburned SD",8.20889125903066
+"DeciduousShrub_2015_MEAN t-test T",3.82487097118091
+"DeciduousShrub_2015_MEAN t-test DF",176.986347149496
+"DeciduousShrub_2015_MEAN t-test p",0.000181166471059103
+"EvergreenShrub_2015_MEAN burned mean",6.84684047960465
+"EvergreenShrub_2015_MEAN burned SD",3.06511427650732
+"EvergreenShrub_2015_MEAN unburned mean",6.05392266544444
+"EvergreenShrub_2015_MEAN unburned SD",3.22852396241029
+"EvergreenShrub_2015_MEAN t-test T",1.71192330929027
+"EvergreenShrub_2015_MEAN t-test DF",181.539031541339
+"EvergreenShrub_2015_MEAN t-test p",0.0886184884724031

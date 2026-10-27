@@ -1,0 +1,18 @@
+"dataset","covariate_set","R2","adj_R2","AICc","weight","K","n","model_averaging"
+"All catchments","Geomorphology, Vegetation",0.29,0.22,1303.4,0.7,18,179,TRUE
+"All catchments","Vegetation",0.2,0.16,1306.1,0.18,10,179,TRUE
+"All catchments","Geomorphology, Hydrology, Vegetation",0.29,0.21,1307.8,0.08,20,179,TRUE
+"All catchments","Hydrology, Vegetation",0.2,0.15,1309.3,0.04,12,179,FALSE
+"Burned catchments","Fire",0.23,0.14,298.6,0.29,7,49,TRUE
+"Burned catchments","Geomorphology, Fire",0.56,0.39,299,0.24,15,49,TRUE
+"Burned catchments","Vegetation",0.34,0.21,299.8,0.17,10,49,TRUE
+"Burned catchments","Geomorphology, Hydrology, Fire",0.63,0.46,300.1,0.14,17,49,TRUE
+"Burned catchments","Geomorphology, Hydrology",0.4,0.25,301.9,0.06,12,49,TRUE
+"Burned catchments","Hydrology, Vegetation",0.39,0.23,302.7,0.04,12,49,FALSE
+"Burned catchments","Hydrology, Fire",0.25,0.12,302.9,0.03,9,49,FALSE
+"Burned catchments","Geomorphology, Vegetation",0.64,0.46,303.2,0.03,18,49,FALSE
+"Burned catchments","Global",0.78,0.57,327.3,0,25,49,FALSE
+"Unburned catchments","Vegetation",0.25,0.18,744.7,0.63,10,98,TRUE
+"Unburned catchments","Geomorphology, Vegetation",0.39,0.27,746.5,0.26,18,98,TRUE
+"Unburned catchments","Hydrology, Vegetation",0.26,0.18,748.4,0.1,12,98,TRUE
+"Unburned catchments","Geomorphology, Hydrology, Vegetation",0.4,0.26,751.9,0.02,20,98,FALSE

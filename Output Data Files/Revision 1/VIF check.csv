@@ -1,0 +1,42 @@
+"dataset","parameter","VIF"
+"Burned catchments (global model covariates)","GRADIENT_mean",6.48085840773717
+"Burned catchments (global model covariates)","FP_WIDTH_mean",6.9530059782154
+"Burned catchments (global model covariates)","Area_km2_VB",2.08381346448497
+"Burned catchments (global model covariates)","SINUOSITY_mean",3.86425118090121
+"Burned catchments (global model covariates)","STRM_ORDER_max",4.24842081142808
+"Burned catchments (global model covariates)","WIDTH_M_mean",171.903053771594
+"Burned catchments (global model covariates)","DEPTH_M_mean",52.4083250821563
+"Burned catchments (global model covariates)","ELEV_M_mean",7.2577147336383
+"Burned catchments (global model covariates)","StrmPow_mean",7.21214619570107
+"Burned catchments (global model covariates)","MEANANNCMS_mean",68.4965414482016
+"Burned catchments (global model covariates)","Time_Since_Burn_min",4.28767457670918
+"Burned catchments (global model covariates)","Fire_Event_Area_Percent_of_uRCA",2.68778200925337
+"Burned catchments (global model covariates)","percent_severe_burn",2.0796984847812
+"Burned catchments (global model covariates)","percent_moderate_burn",3.4313292686931
+"Burned catchments (global model covariates)","percent_mild_burn",3.32787977557767
+"Burned catchments (global model covariates)","percent_woody_cover",3.5269603980215
+"Burned catchments (global model covariates)","ConiferTree_2015_MEAN",14.1997908607812
+"Burned catchments (global model covariates)","BroadleafTree_2015_MEAN",4.69584527936383
+"Burned catchments (global model covariates)","DeciduousShrub_2015_MEAN",11.3828638531866
+"Burned catchments (global model covariates)","EvergreenShrub_2015_MEAN",9.33462230743701
+"Burned catchments (global model covariates)","Forb_2015_MEAN",6.60797073321015
+"Burned catchments (global model covariates)","Graminoid_2015_MEAN",8.36312601223166
+"Burned catchments (global model covariates)","tmLichenLight_2015_MEAN",6.55864412073585
+"All catchments (non-wildfire covariates)","GRADIENT_mean",2.95668756425701
+"All catchments (non-wildfire covariates)","FP_WIDTH_mean",5.87574845163376
+"All catchments (non-wildfire covariates)","Area_km2_VB",1.42971867657911
+"All catchments (non-wildfire covariates)","SINUOSITY_mean",1.90071021767981
+"All catchments (non-wildfire covariates)","STRM_ORDER_max",4.14194176583444
+"All catchments (non-wildfire covariates)","WIDTH_M_mean",55.4791333071954
+"All catchments (non-wildfire covariates)","DEPTH_M_mean",16.4668973387895
+"All catchments (non-wildfire covariates)","ELEV_M_mean",2.74298400640575
+"All catchments (non-wildfire covariates)","StrmPow_mean",2.05361429108797
+"All catchments (non-wildfire covariates)","MEANANNCMS_mean",15.676482013538
+"All catchments (non-wildfire covariates)","percent_woody_cover",3.51669257726245
+"All catchments (non-wildfire covariates)","ConiferTree_2015_MEAN",6.8272434810775
+"All catchments (non-wildfire covariates)","BroadleafTree_2015_MEAN",2.63124892715357
+"All catchments (non-wildfire covariates)","DeciduousShrub_2015_MEAN",6.90677423864665
+"All catchments (non-wildfire covariates)","EvergreenShrub_2015_MEAN",4.82144131348846
+"All catchments (non-wildfire covariates)","Forb_2015_MEAN",2.90935431356793
+"All catchments (non-wildfire covariates)","Graminoid_2015_MEAN",4.46151543294832
+"All catchments (non-wildfire covariates)","tmLichenLight_2015_MEAN",3.33327824376064

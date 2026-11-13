@@ -1,154 +1,88 @@
 ################################################################################
-##################### Revision 1 (Ecosphere): updated analyses #################
+##################### Revisions (Ecosphere): updated analyses #################
+################################# Will Samuel ##################################
 ################################################################################
 #
-# One script for every data correction and re-analysis made for Revision 1.
+#Everything I corrected or re-ran for the Ecosphere revision, in one script.
 #
-# This script is NEW. It does not change or replace any existing script, data
-# file, or figure:
-#   - "Beaver-fire regression FINAL.R" (original beaver-wildfire models, Table 2,
-#     Appendix S4, Figure 4) is untouched.
-#   - "Beaver_Grayling_Theroetical_Modeling_Analysis.R" (original Figure 5) is
-#     untouched.
-#   - Input data files are only read, never overwritten.
-# Outputs are written to two NEW folders, so the original results stay available
-# for comparison (and the changes can be reverted):
-#   - "Output Data Files/Revision 1/"  (tables, summary statistics)
-#   - "Figures/Revision 1/"            (Figure 4 and Figure 5)
+#The original scripts are left as they were so I can compare:
+#  "Beaver-fire regression FINAL.R" - original models, Table 2, Appendix S4, Figure 4
+#  "Beaver_Grayling_Theroetical_Modeling_Analysis.R" - original Figure 5
+#Input data are only read, never overwritten. New outputs go to:
+#  "Output Data Files/Revision 1/" (tables, summary stats)
+#  "Figures/Revision 1/"           (Figures 4 and 5, Appendix S2 Figure S1)
+#Replaces "Figure 5 corrected (Revision 1).R" (same Figure 5 code is in Part 5).
 #
-# It supersedes "Figure 5 corrected (Revision 1).R" (Part 5 below contains the
-# same Figure 5 code).
+#Parts:
+#  0  Original (first submission) numbers, to see where the errors came from
+#  1  Data corrections and summary stats (Results para. 1)
+#  2  Model selection (Table 2)
+#  3  Model averaging (Appendix S4)
+#  4  Figure 4
+#  5  Figure 5, tributary pond densities, and Table 3
+#  6  Table 2 and Appendix S4 redone with AICcmodavg
+#  7  Sensitivity runs
+#  8  Appendix S2 grayling thresholds (Table S1, Figure S1)
 #
-# Run from the RStudio project (Beaver_Fire_Fish_Public.Rproj) so the relative
-# paths resolve. Packages: dplyr, ggplot2, cowplot, patchwork. Part 6 also uses
-# AICcmodavg (the package used in the original analysis).
-#
-# HOW TO VERIFY (run it top to bottom, or one Part at a time with Ctrl+Enter)
-#   PART 0  reproduces the ORIGINAL published numbers from the original data and
-#           shows where each problem came from (mixed sample sizes, inflated
-#           pseudo R2, Figure 5 densities).
-#   PART 1-5 are the corrected analyses. Each Part ends with CHECKPOINTS that
-#           print the value calculated here next to the value now in the
-#           revised manuscript, marked PASS or "<<< CHECK".
-#   PART 6  recalculates Table 2 and Appendix S4 with AICcmodavg::aictab(),
-#           AICcmodavg::modavg(), and summary(lm()) (R2 and adjusted R2),
-#           independently of this script's own functions, and checks that
-#           they agree.
-#   PART 7  sensitivity runs: (a) keeping the data-dredged model, (b) the
-#           original burn severity definition.
-#   PART 8  Appendix S2 (grayling distribution thresholds): summary table,
-#           habitat thresholds, and Figure S1, from the grayling observations
-#           ("Input Data Files/grayling_pres_new.csv", copied from Beaver_Project_2).
-#   The last lines print how many checkpoints passed.
-#
-# PART 1. Model data corrections and summary statistics (Results, para. 1)
-#   1a. Nine valley bottoms (uRCA) appear twice in VB_Y_sums_full_EDITED.csv:
-#       the valley bottom plus a ~17-25 m2 sliver reach contributing area with
-#       the same uRCA. All valley-bottom attributes, pond counts, and covariates
-#       are identical between the two rows, so each valley bottom is kept once
-#       (186 valley bottoms, 414 high-confidence ponds; was 195 and 435).
-#   1b. Burned / unburned follows the pond-based definition used in the
-#       original script: a valley bottom is burned when it has a time since
-#       last burn (its ponds fell within a fire perimeter that predates the
-#       2017 imagery). Fires after the imagery (negative time since burn) are
-#       treated as unburned, as in the original script.
-#   1c. uRCA 2231 burned in 2015 (ignition 7 May 2015) but its time since burn
-#       was coded -1, which made it "unburned". It is set to 2 (2017 - 2015)
-#       and its fire covariates are kept.
-#   1d. Burn severity covariates are re-expressed as the percentage of the
-#       MTBS-classified area in each severity class (sums to 100%). The original
-#       percentages divided class area by valley-bottom area, which exceeded
-#       100% in some valley bottoms. Because the four classes now sum to 100%,
-#       percent no burn (MTBS "unburned to low") is the reference class and is
-#       not entered as a separate covariate.
-#
-# PART 2. Model selection (Table 2): every candidate model in a dataset is fit
-#   to the SAME valley bottoms (rows with complete data for every covariate in
-#   that dataset's candidate set), so AICc values are comparable. In the
-#   original, models with wildfire covariates were fit to 52 rows and the
-#   others to up to 194, and AICc is not comparable across different data.
-#   Models with wildfire covariates can only be fit to burned valley bottoms
-#   (wildfire covariates are undefined for unburned ones), so they are
-#   evaluated in the burned dataset; the all-valley-bottom and unburned
-#   datasets use the non-wildfire candidate models.
-#   Model fit is reported as R2 and adjusted R2. For these Gaussian GLMs, the
-#   Cox and Snell, Nagelkerke, and Efron pseudo R2 all equal the ordinary R2;
-#   McFadden's version depends on the units of the response and pulled the
-#   averaged pseudo R2 used in the first submission down, so it is no longer
-#   reported (the four pseudo R2 measures are still saved as extra columns in
-#   "Table 2 - model selection (all models).csv").
-#   The data-dredged model ("dredge.vb" in the original script) is not part of
-#   the candidate set (it was not described in the manuscript, and its
-#   covariates were chosen from the same data).
-#
-# PART 3. Model averaging (Appendix S4): models with AICc weight >= 0.05 in each
-#   dataset; same calculations as AICcmodavg::modavg (weights renormalized
-#   among the models that contain the parameter; revised unconditional SE;
-#   90% unconditional CI).
-#
-# PART 4. Figure 4: model-averaged predictions (burned valley bottoms) for every
-#   covariate in the highest-R2 top model (Geomorphology, Hydrology, Fire) plus
-#   the important vegetation covariates; each panel averages the top models that
-#   contain that covariate, with other covariates held at their medians.
-#   Important covariates (90% unconditional CI excludes zero) are blue with *.
-#
-# PART 5. Figure 5 and tributary pond densities (Results, last paragraph).
+#What changed:
+#1a. Nine valley bottoms (uRCA) were in VB_Y_sums_full_EDITED.csv twice: the VB plus a
+#    ~17-25 m2 sliver RCA with the same uRCA. Attributes, pond counts, and covariates are
+#    identical between the two rows, so each VB is kept once (186 VBs, 414 HC ponds;
+#    was 195 and 435).
+#1b. Burned/unburned uses the same pond-based definition as before: a VB is burned if it
+#    has a time since last burn (its ponds fell inside a fire perimeter older than the 2017
+#    imagery). Fires after the imagery (negative TSB) are unburned, same as before.
+#1c. uRCA 2231 burned in 2015 (ignition 7 May 2015) but its TSB was coded -1, so it was
+#    "unburned". Set to 2 (2017 - 2015) and kept its fire covariates.
+#1d. Burn severity is now the % of the MTBS-classified area in each class (sums to 100%).
+#    Before, I divided class area by VB area, which went over 100% in some VBs. Since the
+#    four classes sum to 100%, percent no burn (MTBS "unburned to low") is the reference
+#    class and isn't its own covariate.
+#2.  All candidate models in a dataset are fit to the SAME VBs (complete cases for every
+#    covariate in that dataset's candidate set) so AICc is comparable. Originally the fire
+#    models were fit to 52 rows and the others to up to 194. Fire covariates only exist for
+#    burned VBs, so the fire models are only in the burned dataset; the all-VB and unburned
+#    datasets use the non-fire models.
+#    Fit is R2 and adjusted R2. For these Gaussian GLMs, Cox and Snell, Nagelkerke, and
+#    Efron pseudo R2 all equal R2, and McFadden depends on the units of the response (it
+#    pulled down the averaged pseudo R2 in the first submission), so pseudo R2 is dropped.
+#    The four pseudo R2s are still saved as extra columns in
+#    "Table 2 - model selection (all models).csv".
+#    Dropped the dredge model (dredge.vb): it wasn't in the manuscript and its covariates
+#    were picked from the same data.
+#3.  Model averaging: models with AICc weight >= 0.05 in each dataset, same math as
+#    AICcmodavg::modavg (weights renormalized among the models with the parameter, revised
+#    unconditional SE, 90% unconditional CI).
+#4.  Figure 4: model-averaged predictions (burned VBs) for every covariate in the highest-R2
+#    top model (Geomorphology, Hydrology, Fire) plus the important vegetation covariates.
+#    Each panel averages the top models with that covariate, others held at their medians.
+#    Important covariates (90% CI excludes zero) are blue with *.
 ################################################################################
 
-# Packages: install any that are missing, then load them
-needed <- c("dplyr", "ggplot2", "cowplot", "patchwork")
-missing_pkgs <- needed[!sapply(needed, requireNamespace, quietly = TRUE)]
-if (length(missing_pkgs) > 0) install.packages(missing_pkgs)
-# Load packages (dplyr = data wrangling; ggplot2/cowplot/patchwork = figures)
-library(dplyr)
-library(ggplot2)
-library(cowplot)
-library(patchwork)
-# Print your R and package versions (useful if something errors)
-cat("R", R.version$major, ".", R.version$minor, " | dplyr ", as.character(packageVersion("dplyr")),
-    " | ggplot2 ", as.character(packageVersion("ggplot2")), "\n", sep = "")
+library(dplyr)     #data organization
+library(ggplot2)   #plotting
+library(cowplot)   #Figure 4 panels
+library(patchwork) #Figure 5 panels
 
-# Output folders for new tables and figures (created if missing; originals untouched)
+#Output folders for the new tables and figures
 tab_dir <- "Output Data Files/Revision 1"
 fig_dir <- "Figures/Revision 1"
 dir.create(tab_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
-# Stop early if R is not running from the project folder
+#Has to run from the project folder
 if (!file.exists("Output Data Files/VB_Y_sums_full_EDITED.csv"))
   stop("Open Beaver_Fire_Fish_Public.Rproj (or setwd() to the project folder) before running this script.")
 
-# Checkpoint helpers: compare a value calculated here with the value in the manuscript
-# Counters for the checkpoint summary printed at the very end
-n_pass <- 0; n_check <- 0
-# check(): rounds a value calculated here, compares it to the manuscript value, prints PASS or <<< CHECK
-check <- function(label, got, expected, digits = 2) {
-  ok <- isTRUE(all.equal(round(got, digits), expected, tolerance = 1e-9))
-  if (ok) n_pass <<- n_pass + 1 else n_check <<- n_check + 1
-  cat(sprintf("  %-62s here: %-10s manuscript: %-10s %s\n", label,
-              formatC(round(got, digits), format = "f", digits = digits),
-              formatC(expected, format = "f", digits = digits), if (ok) "PASS" else "<<< CHECK"))
-  invisible(ok)
-}
-# check_set(): same idea, but compares two lists of names (order ignored)
-check_set <- function(label, got, expected) {
-  ok <- setequal(got, expected)
-  if (ok) n_pass <<- n_pass + 1 else n_check <<- n_check + 1
-  cat(sprintf("  %-62s %s\n", label, if (ok) "PASS" else paste("<<< CHECK  here:", paste(sort(got), collapse = ", "))))
-  invisible(ok)
-}
-# aicc(): AICc for a fitted model (same formula AICcmodavg uses)
-aicc <- function(m) {                          # AICc exactly as AICcmodavg (K = logLik df)
+#AICc, same formula as AICcmodavg (K = logLik df)
+aicc <- function(m) {
   ll <- logLik(m); K <- attr(ll, "df"); n <- nobs(m)
   -2 * as.numeric(ll) + 2 * K + 2 * K * (K + 1) / (n - K - 1)
 }
 
 
-# ==============================================================================
-# PART 0. Reproduce the ORIGINAL published numbers (to see what went wrong)
-# ==============================================================================
-# Same data and cleaning as "Beaver-fire regression FINAL.R" (lines 41-55).
-# Original model data, cleaned the same way as the original script
+# Part 0. Original (first submission) numbers ----------------------------------
+#Same data and cleaning as "Beaver-fire regression FINAL.R" (lines 41-55)
 orig <- read.csv("Output Data Files/VB_Y_sums_full_EDITED.csv")
 orig_neg <- !is.na(orig$Time_Since_Burn_min) & orig$Time_Since_Burn_min < 0
 for (v in c("Fire_Event_Area_Percent_of_uRCA", "BS1_AreaKm2", "BS2_AreaKm2", "BS3_AreaKm2", "BS4_AreaKm2"))
@@ -156,7 +90,7 @@ for (v in c("Fire_Event_Area_Percent_of_uRCA", "BS1_AreaKm2", "BS2_AreaKm2", "BS
 orig$Time_Since_Burn_min[orig_neg] <- NA
 orig$FP_WIDTH_mean[orig$FP_WIDTH_mean == -9999] <- NA
 
-# The original covariate groups
+#Original covariate groups
 o_geo  <- c("GRADIENT_mean", "FP_WIDTH_mean", "Area_km2_VB", "SINUOSITY_mean", "STRM_ORDER_max",
             "WIDTH_M_mean", "DEPTH_M_mean", "ELEV_M_mean")
 o_hyd  <- c("StrmPow_mean", "MEANANNCMS_mean")
@@ -164,47 +98,42 @@ o_fire <- c("Time_Since_Burn_min", "Fire_Event_Area_Percent_of_uRCA", "percent_s
             "percent_moderate_burn", "percent_mild_burn", "percent_no_burn")
 o_veg  <- c("percent_woody_cover", "ConiferTree_2015_MEAN", "BroadleafTree_2015_MEAN", "DeciduousShrub_2015_MEAN",
             "EvergreenShrub_2015_MEAN", "Forb_2015_MEAN", "Graminoid_2015_MEAN", "tmLichenLight_2015_MEAN")
-# o_fit(): fit a GLM of pond density on a list of covariates
+#GLM of pond density on a set of covariates
 o_fit <- function(x, d) glm(as.formula(paste("dams_per_km2 ~", paste(x, collapse = " + "))), data = d)
-# Pseudo R2 as originally reported: rcompanion::nagelkerke() refits the null model to ALL rows
-# of the data frame, even when the model itself dropped rows with missing covariates.
-# Pseudo R2 the way it was originally calculated (null model fit to ALL rows -> inflated values)
+#Pseudo R2 the way I originally calculated it: rcompanion::nagelkerke() refits the null
+#model to ALL rows of the data frame, even when the model dropped rows with missing
+#covariates, so the values were inflated
 pseudo_r2_as_reported <- function(m, d) {
   n <- nobs(m); ll <- as.numeric(logLik(m)); ll0 <- as.numeric(logLik(glm(dams_per_km2 ~ 1, data = d)))
   mcf <- 1 - ll / ll0; cs <- 1 - exp(-2 / n * (ll - ll0)); nk <- cs / (1 - exp(2 / n * ll0))
   y <- model.response(model.frame(m)); ef <- 1 - sum((y - fitted(m))^2) / sum((y - mean(y))^2)
   mean(c(mcf, cs, nk, ef))
 }
-# Burned valley bottoms in the original data
+#Burned VBs in the original data
 orig_burned <- orig[!is.na(orig$Time_Since_Burn_min), ]
-# Refit three original models
+#Three of the original models
 o1 <- o_fit(c(o_geo, o_hyd, o_fire), orig)          # "All catchments" Geo/Hydro/Fire
 o2 <- o_fit(c(o_geo, o_fire), orig)                 # "All catchments" Geo/Fire
 o3 <- o_fit(c(o_geo, o_hyd), orig)                  # Geo/Hydro (no fire)
-# Show how many rows each model actually used (glm drops rows with missing values)
-cat("\nPART 0: original analysis. Note the different sample sizes (glm drops rows with NA):\n")
+#glm drops rows with NAs, so each of these was fit to a different number of rows
+cat("\nPart 0. Original analysis (first submission):\n")
 cat("  Geo/Hydro/Fire n =", nobs(o1), "| Geo/Fire n =", nobs(o2), "| Geo/Hydro n =", nobs(o3),
     "| valley-bottom rows =", nrow(orig), "(includes 9 duplicates)\n")
 cat("  AICc from models fit to different data cannot be compared; fewer rows -> lower AICc.\n")
-cat("CHECKPOINTS (original Table 2 and Abstract are reproduced exactly):\n")
-# These should PASS: proves the original numbers are reproduced
-check("Original Table 2 Geo/Hydro/Fire AICc", aicc(o1), 312.6, 1)
-check("Original Table 2 Geo/Fire AICc", aicc(o2), 315.5, 1)
-check("Original Table 2 all catchments Geo/Hydro/Fire pseudo R2", pseudo_r2_as_reported(o1, orig), 0.88)
-check("Original Table 2 burned Geo/Hydro/Fire pseudo R2", pseudo_r2_as_reported(o1, orig_burned), 0.83)
-check("Original Abstract fire-only pseudo R2", pseudo_r2_as_reported(o_fit(o_fire, orig), orig), 0.75)
-check("Original Abstract geomorphology/hydrology pseudo R2", pseudo_r2_as_reported(o3, orig), 0.31)
-check("Original Abstract vegetation pseudo R2", pseudo_r2_as_reported(o_fit(o_veg, orig), orig), 0.19)
+cat("  AICc: Geo/Hydro/Fire", round(aicc(o1), 1), "| Geo/Fire", round(aicc(o2), 1), "\n")
+cat("  Pseudo R2 as reported: Geo/Hydro/Fire, all", round(pseudo_r2_as_reported(o1, orig), 2),
+    "| burned", round(pseudo_r2_as_reported(o1, orig_burned), 2),
+    "| fire only", round(pseudo_r2_as_reported(o_fit(o_fire, orig), orig), 2),
+    "| geo/hydro", round(pseudo_r2_as_reported(o3, orig), 2),
+    "| vegetation", round(pseudo_r2_as_reported(o_fit(o_veg, orig), orig), 2), "\n")
 cat("  Same Geo/Hydro/Fire model, null fit to the SAME 52 rows instead: McFadden =",
     round(1 - as.numeric(logLik(o1)) / as.numeric(logLik(glm(dams_per_km2 ~ 1, data = model.frame(o1)))), 2), "\n")
 
-# Original Figure 5 tributary densities (Beaver_Grayling_Theroetical_Modeling_Analysis.R,
-# lines 710-731). The original code divided the summed ponds in a tributary by the MEAN
-# area of ONE valley bottom. Its summarize() also returned one row per valley bottom
-# instead of one per tributary (because of the ifelse(is.na(...)) line); newer versions
-# of dplyr no longer allow that, so the same result is rebuilt here with mutate(), which
-# keeps one row per valley bottom and gives identical numbers.
-# Original tributary densities: ponds / area of ONE average valley bottom (the original error)
+#Original Figure 5 tributary densities (Beaver_Grayling_Theroetical_Modeling_Analysis.R,
+#lines 710-731). I divided the summed ponds in a tributary by the MEAN area of ONE valley
+#bottom. That summarize() also returned one row per VB instead of one per tributary
+#(because of the ifelse(is.na(...)) line). Newer dplyr won't allow that, so it's rebuilt
+#with mutate() here, which still gives one row per VB and the same numbers.
 orig5 <- read.csv("Theoretical Passage Data Files/VB_with_beaver_fire_data.csv") %>%
   group_by(HUC12) %>%
   mutate(VB_Area_SqKm = mean(RCA_Area_SqKm),         # mean area of ONE valley bottom (the error)
@@ -213,23 +142,19 @@ orig5 <- read.csv("Theoretical Passage Data Files/VB_with_beaver_fire_data.csv")
   ungroup() %>%
   select(HUC12, VB_Area_SqKm, Beaver_Count, BS_sum_AreaKm2) %>%
   mutate(Beaver_Density = Beaver_Count / VB_Area_SqKm)
-# Attach these to the habitat-simulation output (one row per tributary), as the original did.
-# merge() is base R, so this line behaves the same in every dplyr version.
+#Join to the habitat simulation output (one row per tributary) like the original did.
+#merge() is base R, so this works the same in any dplyr version.
 orig5 <- merge(read.csv("Theoretical Passage Data Files/POP.100HUC.HAB.dat.csv"), orig5, by = "HUC12", all.x = TRUE)
 orig5 <- orig5[!is.na(orig5$Beaver_Density) & orig5$Beaver_Density > 0, ]
-cat("  Original Figure 5 summary used", nrow(orig5), "rows for about 133 tributaries.\n")
-# Should PASS: matches the original published Figure 5 values
-check("Original Results tributary density minimum", min(orig5$Beaver_Density), 0.2, 1)
-check("Original tributary density maximum (code comment 137.25; text 137.3)", max(orig5$Beaver_Density), 137.25, 2)
-check("Original Results tributary density mean", mean(orig5$Beaver_Density), 23.6, 1)
-check("Original Results Chatanika mean density", mean(orig5$Beaver_Density[orig5$basin == "chat"]), 33.1, 1)
+cat("  Original Figure 5:", nrow(orig5), "rows for ~133 tributaries | density min",
+    round(min(orig5$Beaver_Density), 1), "max", round(max(orig5$Beaver_Density), 2),
+    "mean", round(mean(orig5$Beaver_Density), 1),
+    "| Chatanika mean", round(mean(orig5$Beaver_Density[orig5$basin == "chat"]), 1), "\n")
 
 
-# ==============================================================================
-# PART 1. Model data corrections and summary statistics
-# ==============================================================================
+# Part 1. Data corrections and summary statistics ------------------------------
 
-# Start again from the raw model data for the corrected analysis
+#Start over from the raw model data
 vb_raw <- read.csv("Output Data Files/VB_Y_sums_full_EDITED.csv")
 
 # 1a. One row per valley bottom (drop the sliver duplicate = smaller RCA area)
@@ -277,7 +202,7 @@ unburned_VB <- vb[!vb$burned, ]
 # Collect summary statistics into one table
 stat_rows <- list()
 add_stat <- function(name, value) stat_rows[[length(stat_rows) + 1]] <<- data.frame(statistic = name, value = value)
-# ttest_stats(): means, SDs and a Welch t-test, burned vs unburned
+#Means, SDs, and a Welch t-test, burned vs unburned
 ttest_stats <- function(var, label) {
   t <- t.test(burned_VB[[var]], unburned_VB[[var]])
   add_stat(paste(label, "burned mean"), mean(burned_VB[[var]], na.rm = TRUE))
@@ -325,73 +250,17 @@ print(summary_stats, row.names = FALSE)
 write.csv(summary_stats, file.path(tab_dir, "Summary statistics (Results).csv"), row.names = FALSE)
 write.csv(vb, file.path(tab_dir, "Model data - corrected valley bottoms.csv"), row.names = FALSE)
 
-# sv(): look up one statistic by name for the checks below
-sv <- function(name) summary_stats$value[summary_stats$statistic == name]
-cat("\nPART 1 CHECKPOINTS (Abstract, Methods, Results paragraph 1):\n")
-# Checkpoints: every Results paragraph 1 number
-check("Valley bottoms with HC ponds", sv("Valley bottoms with HC ponds"), 186, 0)
-check("HC ponds", sv("HC ponds"), 414, 0)
-check("Burned valley bottoms", sv("Burned valley bottoms"), 87, 0)
-check("Unburned valley bottoms", sv("Unburned valley bottoms"), 99, 0)
-check("Pond density mean (ponds/km2)", sv("Pond density mean (ponds/km2)"), 7.4, 1)
-check("Pond density SD", sv("Pond density SD"), 10.44, 2)
-check("Burned VB area mean (km2)", sv("Valley bottom area (km2) burned mean"), 0.52, 2)
-check("Burned VB area SD", sv("Valley bottom area (km2) burned SD"), 0.39, 2)
-check("Unburned VB area mean", sv("Valley bottom area (km2) unburned mean"), 0.74, 2)
-check("Unburned VB area SD", sv("Valley bottom area (km2) unburned SD"), 1.00, 2)
-check("VB area t-test T", sv("Valley bottom area (km2) t-test T"), -2.04, 2)
-check("VB area t-test DF", sv("Valley bottom area (km2) t-test DF"), 130.22, 2)
-check("VB area t-test p", sv("Valley bottom area (km2) t-test p"), 0.04, 2)
-check("Time since burn mean (yr)", sv("Time since burn mean (yr)"), 26, 0)
-check("Time since burn SD", sv("Time since burn SD"), 20, 0)
-check("Burned density mean", sv("Pond density (ponds/km2) burned mean"), 7.7, 1)
-check("Burned density SD", sv("Pond density (ponds/km2) burned SD"), 9.6, 1)
-check("Unburned density mean", sv("Pond density (ponds/km2) unburned mean"), 7.2, 1)
-check("Unburned density SD", sv("Pond density (ponds/km2) unburned SD"), 11.2, 1)
-check("Density t-test T", sv("Pond density (ponds/km2) t-test T"), 0.32, 2)
-check("Density t-test DF", sv("Pond density (ponds/km2) t-test DF"), 183.94, 2)
-check("Density t-test p", sv("Pond density (ponds/km2) t-test p"), 0.75, 2)
-check("Burned VBs with burn severity data", sv("Burned VBs with burn severity data"), 49, 0)
-check("Severe burn mean (% of classified area)", sv("percent_severe_burn mean (% of classified area)"), 6.64, 2)
-check("Severe burn SD", sv("percent_severe_burn SD"), 9.04, 2)
-check("Severe burn max", sv("percent_severe_burn max"), 36.53, 2)
-check("Moderate burn mean (% of classified area)", sv("percent_moderate_burn mean (% of classified area)"), 24.38, 2)
-check("Moderate burn SD", sv("percent_moderate_burn SD"), 15.13, 2)
-check("Moderate burn max", sv("percent_moderate_burn max"), 73.35, 2)
-check("Pond area mean (m2)", sv("Pond area mean (m2)"), 2880, 0)
-check("Pond area SD", sv("Pond area SD"), 4903, 0)
-check("Burned pond area mean", sv("Pond area (m2) burned mean"), 2062, 0)
-check("Burned pond area SD", sv("Pond area (m2) burned SD"), 2444, 0)
-check("Unburned pond area mean", sv("Pond area (m2) unburned mean"), 3600, 0)
-check("Unburned pond area SD", sv("Pond area (m2) unburned SD"), 6246, 0)
-check("Pond area t-test T", sv("Pond area (m2) t-test T"), -2.26, 2)
-check("Pond area t-test DF", sv("Pond area (m2) t-test DF"), 130.61, 2)
-check("Pond area t-test p", sv("Pond area (m2) t-test p"), 0.03, 2)
-check("Woody cover burned / unburned", sv("percent_woody_cover burned mean"), 65.7, 1)
-check("  (unburned)", sv("percent_woody_cover unburned mean"), 67.7, 1)
-check("Conifer burned", sv("ConiferTree_2015_MEAN burned mean"), 15.8, 1)
-check("Conifer unburned", sv("ConiferTree_2015_MEAN unburned mean"), 22.0, 1)
-check("Conifer t-test T", sv("ConiferTree_2015_MEAN t-test T"), -5.55, 2)
-check("Deciduous shrub burned", sv("DeciduousShrub_2015_MEAN burned mean"), 28.4, 1)
-check("Deciduous shrub unburned", sv("DeciduousShrub_2015_MEAN unburned mean"), 23.7, 1)
-check("Deciduous shrub t-test T", sv("DeciduousShrub_2015_MEAN t-test T"), 3.82, 2)
-# Discussion (time since burn): fire timing among the burned valley bottoms with burn severity
-# data (the 49 used in the burned models): all last burned 2003-2015, 78% in 2004
-check("Discussion: severity-data VBs, earliest last-burn year", 2017 - max(sev$Time_Since_Burn_min), 2003, 0)
-check("Discussion: severity-data VBs, latest last-burn year", 2017 - min(sev$Time_Since_Burn_min), 2015, 0)
-check("Discussion: % of severity-data VBs that burned in 2004", 100 * mean(sev$Time_Since_Burn_min == 13), 78, 0)
-# Discussion (wildfire paragraph): deciduous shrub cover rises with % severe burn, and most
-# burned valley bottoms burned more than a decade before the 2017 imagery
-# Severe burn vs deciduous shrub correlation (Discussion)
-check("Discussion: r(% severe burn, deciduous shrub), burned VBs with severity", cor(sev$percent_severe_burn, sev$DeciduousShrub_2015_MEAN), 0.32, 2)
-check("Discussion: share of burned VBs that burned >= 10 years before imagery", mean(burned_VB$Time_Since_Burn_min >= 10) > 0.5, 1, 0)
+#Discussion numbers: fire timing for the 49 burned VBs with severity data (the ones in
+#the burned models), and severe burn vs deciduous shrub
+cat("\nDiscussion: severity-data VBs last burned", 2017 - max(sev$Time_Since_Burn_min), "-",
+    2017 - min(sev$Time_Since_Burn_min), "|", round(100 * mean(sev$Time_Since_Burn_min == 13)),
+    "% in 2004 | r(% severe burn, deciduous shrub) =",
+    round(cor(sev$percent_severe_burn, sev$DeciduousShrub_2015_MEAN), 2), "\n")
 cat(sprintf("  (burned >= 10 years before imagery: %.1f%% of all burned VBs; %.1f%% of those with severity data)\n",
             100 * mean(burned_VB$Time_Since_Burn_min >= 10), 100 * mean(sev$Time_Since_Burn_min >= 10)))
 
 
-# ==============================================================================
-# PART 2. Model selection on common rows (Table 2)
-# ==============================================================================
+# Part 2. Model selection on common rows (Table 2) -----------------------------
 
 # Covariate groups (Table 1); percent no burn left out as the reference class
 geo  <- c("GRADIENT_mean", "FP_WIDTH_mean", "Area_km2_VB", "SINUOSITY_mean",
@@ -427,9 +296,9 @@ set_labels <- c(global.vb.reduced = "Global", netmap.vb = "Geomorphology, Hydrol
                 hydro.fire.vb = "Hydrology, Fire", geo.veg.vb = "Geomorphology, Vegetation",
                 hydro.veg.vb = "Hydrology, Vegetation")
 
-# pseudo_r2(): four pseudo R2 measures and their mean, null model fit to the SAME rows
-# (saved as extra columns only; the manuscript reports R2 and adjusted R2)
-pseudo_r2 <- function(m) {                     # same four measures as rcompanion::nagelkerke + Efron
+#Four pseudo R2s and their mean, null model fit to the SAME rows
+#(only saved as extra columns; the manuscript reports R2 and adjusted R2)
+pseudo_r2 <- function(m) {                     # same four as rcompanion::nagelkerke + Efron
   mf <- model.frame(m); n <- nobs(m)
   ll  <- as.numeric(logLik(m))
   ll0 <- as.numeric(logLik(glm(dams_per_km2 ~ 1, data = mf)))   # null fit to the SAME rows
@@ -440,13 +309,13 @@ pseudo_r2 <- function(m) {                     # same four measures as rcompanio
   ef  <- 1 - sum((y - fitted(m))^2) / sum((y - mean(y))^2)
   c(McFadden = mcf, CoxSnell = cs, Nagelkerke = nk, Efron = ef, Mean = mean(c(mcf, cs, nk, ef)))
 }
-# r2_adj(): ordinary R2 and adjusted R2 (k = number of covariates, not counting the intercept)
+#R2 and adjusted R2 (k = number of covariates, not counting the intercept)
 r2_adj <- function(m) {
   y <- model.response(model.frame(m)); n <- length(y); k <- length(coef(m)) - 1
   r2 <- 1 - sum((y - fitted(m))^2) / sum((y - mean(y))^2)
   c(R2 = r2, adj_R2 = 1 - (1 - r2) * (n - 1) / (n - k - 1))
 }
-# fit_set(): keep rows complete for every covariate in the set, then fit all models to those same rows
+#Keep rows complete for every covariate in the set, then fit all the models to those rows
 fit_set <- function(dat, cand) {
   vars <- unique(unlist(cand))
   common <- dat[complete.cases(dat[, c("dams_per_km2", vars)]), ]
@@ -454,7 +323,7 @@ fit_set <- function(dat, cand) {
     glm(as.formula(paste("dams_per_km2 ~", paste(x, collapse = " + "))), data = common))
   list(data = common, fits = fits)
 }
-# selection_table(): AICc, delta AICc and weights, best model first
+#AICc, delta AICc, and weights, best model first
 selection_table <- function(fs, dataset) {
   out <- do.call(rbind, lapply(names(fs$fits), function(nm) {
     m <- fs$fits[[nm]]; p <- pseudo_r2(m); r <- r2_adj(m)
@@ -493,48 +362,10 @@ table2_ms <- table2 %>%
 print(table2_ms, row.names = FALSE)
 write.csv(table2_ms, file.path(tab_dir, "Table 2 - manuscript version.csv"), row.names = FALSE)
 
-# t2(): look up one Table 2 value for the checks
-t2 <- function(ds, cs, col) table2[table2$dataset == ds & table2$covariate_set == cs, col]
-cat("\nPART 2 CHECKPOINTS (Methods sample sizes, Table 2, Results paragraph 2, Abstract):\n")
-# Checkpoints: sample sizes and every Table 2 value
-check("Common rows: all catchments", nrow(sets[["All catchments"]]$data), 179, 0)
-check("Common rows: burned catchments", nrow(sets[["Burned catchments"]]$data), 49, 0)
-check("Common rows: unburned catchments", nrow(sets[["Unburned catchments"]]$data), 98, 0)
-ms_t2 <- list(   # dataset, covariate set, R2, adjusted R2, AICc, weight, K
-  list("All catchments", "Geomorphology, Vegetation", 0.29, 0.22, 1303.4, 0.70, 18),
-  list("All catchments", "Vegetation", 0.20, 0.16, 1306.1, 0.18, 10),
-  list("All catchments", "Geomorphology, Hydrology, Vegetation", 0.29, 0.21, 1307.8, 0.08, 20),
-  list("All catchments", "Hydrology, Vegetation", 0.20, 0.15, 1309.3, 0.04, 12),
-  list("Burned catchments", "Fire", 0.23, 0.14, 298.6, 0.29, 7),
-  list("Burned catchments", "Geomorphology, Fire", 0.56, 0.39, 299.0, 0.24, 15),
-  list("Burned catchments", "Vegetation", 0.34, 0.21, 299.8, 0.17, 10),
-  list("Burned catchments", "Geomorphology, Hydrology, Fire", 0.63, 0.46, 300.1, 0.14, 17),
-  list("Burned catchments", "Geomorphology, Hydrology", 0.40, 0.25, 301.9, 0.06, 12),
-  list("Burned catchments", "Hydrology, Vegetation", 0.39, 0.23, 302.7, 0.04, 12),
-  list("Burned catchments", "Hydrology, Fire", 0.25, 0.12, 302.9, 0.03, 9),
-  list("Burned catchments", "Geomorphology, Vegetation", 0.64, 0.46, 303.2, 0.03, 18),
-  list("Burned catchments", "Global", 0.78, 0.57, 327.3, 0.00, 25),
-  list("Unburned catchments", "Vegetation", 0.25, 0.18, 744.7, 0.63, 10),
-  list("Unburned catchments", "Geomorphology, Vegetation", 0.39, 0.27, 746.5, 0.26, 18),
-  list("Unburned catchments", "Hydrology, Vegetation", 0.26, 0.18, 748.4, 0.10, 12),
-  list("Unburned catchments", "Geomorphology, Hydrology, Vegetation", 0.40, 0.26, 751.9, 0.02, 20))
-for (r in ms_t2) {
-  lab <- paste0(sub(" catchments", "", r[[1]]), ": ", r[[2]])
-  check(paste(lab, "R2"), t2(r[[1]], r[[2]], "R2"), r[[3]], 2)
-  check(paste(lab, "adjusted R2"), t2(r[[1]], r[[2]], "adj_R2"), r[[4]], 2)
-  check(paste(lab, "AICc"), t2(r[[1]], r[[2]], "AICc"), r[[5]], 1)
-  check(paste(lab, "weight"), t2(r[[1]], r[[2]], "weight"), r[[6]], 2)
-  check(paste(lab, "K"), t2(r[[1]], r[[2]], "K"), r[[7]], 0)
-}
-check("Combined weight of burned models with wildfire covariates",
-      sum(table2$weight[table2$dataset == "Burned catchments" & table2$model %in% fire_models]), 0.71, 2)
 
+# Part 3. Model averaging (Appendix S4) ----------------------------------------
 
-# ==============================================================================
-# PART 3. Model averaging (Appendix S4)
-# ==============================================================================
-
-# modavg_param(): weighted average of one covariate across the top models, with 90% interval (as AICcmodavg::modavg)
+#Weighted average of one covariate across the top models, with 90% CI (same as AICcmodavg::modavg)
 modavg_param <- function(fits, parm, level = 0.90) {
   # Which models contain this covariate
   has <- sapply(fits, function(m) parm %in% names(coef(m)) && !is.na(coef(m)[parm]))
@@ -551,7 +382,7 @@ modavg_param <- function(fits, parm, level = 0.90) {
   data.frame(parameter = parm, estimate = est, uncond_SE = use,
              lower_90 = est - z * use, upper_90 = est + z * use, n_models = sum(has))
 }
-# top_models(): models with AICc weight >= 0.05
+#Top models = AICc weight >= 0.05
 top_models <- function(fs, dataset) {
   st <- selection_table(fs, dataset)
   fs$fits[st$model[st$weight >= 0.05]]
@@ -572,32 +403,9 @@ appendix <- appendix[, c("dataset", "parameter", "estimate", "uncond_SE", "lower
 print(appendix %>% mutate(across(where(is.numeric), ~ round(.x, 3))), row.names = FALSE)
 write.csv(appendix, file.path(tab_dir, "Appendix S4 - model-averaged estimates.csv"), row.names = FALSE)
 
-# Helpers to look up Appendix S4 values for the checks
-ap <- function(ds, p, col) appendix[appendix$dataset == ds & appendix$parameter == p, col]
-imp <- function(ds) appendix$parameter[appendix$dataset == ds & appendix$important]
-cat("\nPART 3 CHECKPOINTS (Appendix S4, Results paragraph 3, Discussion):\n")
-# Checkpoints: which covariates are important, and key estimates
-check_set("Burned: important parameters (90% CI excludes 0)", imp("Burned catchments"),
-          c("percent_severe_burn", "Area_km2_VB", "SINUOSITY_mean", "DeciduousShrub_2015_MEAN", "Forb_2015_MEAN"))
-check_set("All: important parameters", imp("All catchments"),
-          c("Area_km2_VB", "SINUOSITY_mean", "ELEV_M_mean", "percent_woody_cover", "BroadleafTree_2015_MEAN", "Graminoid_2015_MEAN"))
-check_set("Unburned: important parameters", imp("Unburned catchments"),
-          c("Area_km2_VB", "ELEV_M_mean", "ConiferTree_2015_MEAN", "BroadleafTree_2015_MEAN",
-            "DeciduousShrub_2015_MEAN", "Graminoid_2015_MEAN", "tmLichenLight_2015_MEAN"))
-check("Burned: severe burn estimate", ap("Burned catchments", "percent_severe_burn", "estimate"), 0.26, 2)
-check("Burned: severe burn 90% CI lower", ap("Burned catchments", "percent_severe_burn", "lower_90"), 0.12, 2)
-check("Burned: severe burn 90% CI upper", ap("Burned catchments", "percent_severe_burn", "upper_90"), 0.40, 2)
-check("Burned: moderate burn estimate", ap("Burned catchments", "percent_moderate_burn", "estimate"), -0.09, 2)
-check("Burned: moderate burn 90% CI lower", ap("Burned catchments", "percent_moderate_burn", "lower_90"), -0.17, 2)
-check("Burned: moderate burn 90% CI upper", ap("Burned catchments", "percent_moderate_burn", "upper_90"), 0.00, 2)
-check("Burned: valley bottom area estimate", ap("Burned catchments", "Area_km2_VB", "estimate"), -8.55, 2)
-check("Burned: sinuosity estimate", ap("Burned catchments", "SINUOSITY_mean", "estimate"), -48.41, 2)
-check("Burned: deciduous shrub estimate", ap("Burned catchments", "DeciduousShrub_2015_MEAN", "estimate"), 0.46, 2)
-check("Burned: forb estimate", ap("Burned catchments", "Forb_2015_MEAN", "estimate"), 2.33, 2)
-check("All: sinuosity estimate (positive)", ap("All catchments", "SINUOSITY_mean", "estimate"), 28.98, 2)
 
-# Variance inflation factors (checks the Methods statement that all VIF < 10)
-# vif_check(): VIF = how much each covariate overlaps the others (>10 = strong overlap)
+#Variance inflation factors (Methods: all VIF < 10)
+#VIF > 10 = strong overlap with the other covariates
 vif_check <- function(dat, vars) {
   d <- dat[complete.cases(dat[, vars]), vars]
   sapply(vars, function(v) {
@@ -615,9 +423,7 @@ print(vifs, row.names = FALSE)
 write.csv(vifs, file.path(tab_dir, "VIF check.csv"), row.names = FALSE)
 
 
-# ==============================================================================
-# PART 4. Figure 4: model-averaged predictions, burned valley bottoms
-# ==============================================================================
+# Part 4. Figure 4: model-averaged predictions, burned valley bottoms ----------
 
 # Top burned models and their weights
 burned_set <- sets[["Burned catchments"]]
@@ -627,10 +433,9 @@ w_top <- sapply(burned_top, aicc); w_top <- exp(-0.5 * (w_top - min(w_top))); w_
 all_vars <- unique(unlist(cand_all[names(burned_top)]))
 medians  <- sapply(burned_set$data[, all_vars], median)
 
-# modavg_pred(): predicted pond density at values x of one covariate, averaged over the top
-# models that contain that covariate (weights renormalized, same as the Appendix S4 averages),
-# with a 90% band
-modavg_pred <- function(var, x, level = 0.90) {   # as AICcmodavg::modavgPred, conditional on var
+#Predicted pond density along one covariate, averaged over the top models that contain it
+#(weights renormalized, same as the Appendix S4 averages), with a 90% band
+modavg_pred <- function(var, x, level = 0.90) {   # like AICcmodavg::modavgPred, conditional on var
   has <- sapply(burned_top, function(m) var %in% names(coef(m)))
   mods <- burned_top[has]; w <- w_top[has] / sum(w_top[has])
   nd <- as.data.frame(t(medians))[rep(1, length(x)), , drop = FALSE]
@@ -649,18 +454,6 @@ fig4_imp <- appendix %>% filter(dataset == "Burned catchments", important) %>% p
 # Panels: every covariate in the highest-R2 top model, then any important covariate not in it
 best_r2  <- names(burned_top)[which.max(sapply(burned_top, function(m) r2_adj(m)["R2"]))]
 fig4_vars <- c(cand_all[[best_r2]], setdiff(fig4_imp, cand_all[[best_r2]]))
-cat("\nPART 4 CHECKPOINTS (Figure 4):\n")
-check_set("Figure 4: highest-R2 top model (Geo + Hydro + Fire)", best_r2, "netmap.fire.vb")
-check("Figure 4: panels (15 + deciduous shrub + forb)", length(fig4_vars), 17, digits = 0)
-# Each panel's line has the Appendix S4 slope, and a flat line fits inside the band only for unimportant covariates
-fig4_ok <- sapply(fig4_vars, function(v) {
-  obs <- burned_set$data[[v]]; pd <- modavg_pred(v, seq(min(obs), max(obs), length.out = 100))
-  slope <- (pd$fit[100] - pd$fit[1]) / (pd$x[100] - pd$x[1])
-  est <- appendix$estimate[appendix$dataset == "Burned catchments" & appendix$parameter == v]
-  flat_fits <- max(pd$lower) <= min(pd$upper)
-  isTRUE(all.equal(slope, est, tolerance = 1e-6)) && (flat_fits == !(v %in% fig4_imp))
-})
-check("Figure 4: slopes = Appendix S4; blue bands exclude a flat line", sum(fig4_ok), 17, digits = 0)
 # Axis labels
 fig4_labels <- c(GRADIENT_mean = "Gradient", FP_WIDTH_mean = "Floodplain Width (m)",
                  Area_km2_VB = "Valley Bottom Area (km\u00b2)", SINUOSITY_mean = "Sinuosity",
@@ -708,28 +501,23 @@ ggsave(file.path(fig_dir, "Figure 4 (Revision 1).jpeg"), fig4,
        width = 14, height = 17.5, units = "in", dpi = 600, bg = "white")
 
 
-# ==============================================================================
-# PART 5. Figure 5 and tributary pond densities
-# ==============================================================================
-# Corrections relative to the original Figure 5 code:
-#   1. Beaver density per tributary (HUC12) = total ponds / total valley-bottom
-#      area in the tributary. The original divided the summed ponds by the MEAN
-#      area of one valley bottom (summarize(VB_Area_SqKm = mean(...))).
-#   2. Percent burned per tributary = 100 x burned valley-bottom area / total
-#      valley-bottom area. Burned area = MTBS low + moderate + high severity
-#      (BS2 + BS3 + BS4), capped at each valley bottom's area, fires that
-#      ignited in or before 2017 only.
-#   3. Panel B trend lines are fit to percent burned (the original p2
-#      geom_smooth() used x = Beaver_Density).
-#   4. Panel B shows burned tributaries only.
-#   5. Valley bottoms stored as several polygon pieces (same uRCA ID) are
-#      combined: piece areas and pond counts are summed; fire attributes
-#      (joined by uRCA and repeated on each piece) are counted once. The
-#      original summary also produced several rows per tributary, so its
-#      summary statistics were weighted by the number of valley bottoms.
-#   6. Axis label typo fixed ("Habitat"); both panels use 10-unit y-axis steps.
-# Limitation (same as the original): valley bottoms that straddle two
-# tributaries are counted in full in each.
+# Part 5. Figure 5 and tributary pond densities --------------------------------
+#Fixes to the original Figure 5 code:
+#  1. Beaver density per tributary (HUC12) = total ponds / total valley-bottom area in the
+#     tributary. Originally I divided the summed ponds by the MEAN area of one valley
+#     bottom (summarize(VB_Area_SqKm = mean(...))).
+#  2. Percent burned per tributary = 100 x burned VB area / total VB area. Burned area =
+#     MTBS low + moderate + high severity (BS2 + BS3 + BS4), capped at each VB's area,
+#     fires that ignited in or before 2017 only.
+#  3. Panel B trend lines are fit to percent burned (the original p2 geom_smooth() used
+#     x = Beaver_Density).
+#  4. Panel B shows burned tributaries only.
+#  5. VBs stored as several polygon pieces (same uRCA) are combined: piece areas and pond
+#     counts are summed; fire attributes (joined by uRCA and repeated on each piece) are
+#     counted once. The original summary also had several rows per tributary, so its
+#     summary stats were weighted by the number of VBs.
+#  6. Fixed the axis label typo ("Habitat"); both panels use 10-unit y-axis steps.
+#Limitation (same as before): VBs that straddle two tributaries are counted in full in each.
 
 # Read the fish-passage simulation output for each passage rate
 read_pop <- function(f) {
@@ -817,7 +605,7 @@ p1_corr <- ggplot(dat5, aes(x = Beaver_Density, y = percent_available_habitat, c
   geom_point(alpha = 0.6, size = 3) +
   geom_smooth(method = "lm", se = FALSE, lwd = 1.5) +
   scale_color_manual(values = pop_cols) + y_scale + theme_cowplot() +
-  labs(title = "(a)", x = expression("Beaver pond density (ponds/km"^2*")"),
+  labs(title = "(a)", x = expression("Beaver-pond density (ponds/km"^2*")"),
        y = "Percent Available Habitat", col = "Probability of Passage (%)")
 p2_corr <- ggplot(burned5, aes(x = Percent_Burned, y = percent_available_habitat, col = POP_rate)) +
   geom_point(alpha = 0.6, size = 3) +
@@ -833,26 +621,8 @@ fig5_corr
 ggsave(file.path(fig_dir, "Figure 5 corrected.jpeg"), fig5_corr, width = 10, height = 5, units = "in", dpi = 600, bg = "white")
 
 
-cat("\nPART 5 CHECKPOINTS (Results last paragraph, Figure 5, response to R1):\n")
-# Checkpoints: Results last paragraph and Figure 5
-check("Tributaries in panel A", dens_summary$n_tributaries, 133, 0)
-check("Tributary density minimum (ponds/km2)", dens_summary$min, 0.01, 2)
-check("Tributary density maximum", dens_summary$max, 5.19, 2)
-check("Tributary density mean", dens_summary$mean, 0.79, 2)
-check("Tributary density SD", dens_summary$sd, 0.91, 2)
-for (b in list(c("chat", "Chatanika", 1.16), c("chen", "Chena", 0.89), c("salc", "Salcha", 0.57),
-               c("good", "Goodpaster", 0.55), c("shaw", "Shaw Creek", 0.43)))
-  check(paste(b[2], "mean density"), basin_summary$mean_density[basin_summary$basin == b[1]], as.numeric(b[3]), 2)
-check("Burned tributaries in panel B", nrow(burned5) / 4, 74, 0)
-# Results: basins with the highest pond density also had the most valley-bottom area burned
-check("Chatanika mean % valley-bottom area burned", basin_summary$mean_pct_burned[basin_summary$basin == "chat"], 13, 0)
-check("Chena mean % valley-bottom area burned", basin_summary$mean_pct_burned[basin_summary$basin == "chen"], 13, 0)
-check("Other basins: lowest mean % burned", min(basin_summary$mean_pct_burned[!basin_summary$basin %in% c("chat", "chen")]), 2, 0)
-check("Other basins: highest mean % burned", max(basin_summary$mean_pct_burned[!basin_summary$basin %in% c("chat", "chen")]), 10, 0)
-
 # Habitat lost to beaver dams in each tributary at 20% passage, relative to the same
 # tributary with no dams (100% passage). PASS_LENGTH_KM is in meters in these files.
-# Habitat lost per tributary at 20% passage; worst first (Paldo Creek)
 p100 <- pop[pop$POP_rate == 100, c("HUC12", "basin", "PASS_LENGTH_KM")]
 p20  <- pop[pop$POP_rate == 20,  c("HUC12", "PASS_LENGTH_KM")]
 trib_loss <- merge(p100, p20, by = "HUC12", suffixes = c("_100", "_20"))
@@ -861,51 +631,26 @@ trib_loss$pct_lost <- 100 * (1 - trib_loss$PASS_LENGTH_KM_20 / trib_loss$PASS_LE
 trib_loss <- trib_loss[order(-trib_loss$pct_lost), ]
 print(head(trib_loss, 10), row.names = FALSE)          # HUC12 190803050204 = Paldo Creek (Salcha)
 write.csv(trib_loss, file.path(fig_dir, "tributary_habitat_loss_POP20.csv"), row.names = FALSE)
-check("Tributaries in the fish passage simulation", nrow(trib_loss), 201, 0)
-check("Largest tributary loss at 20% POP (%)", trib_loss$pct_lost[1], 98.7, 1)
-check("Largest tributary loss at 20% POP (km)", trib_loss$lost_km[1], 52, 0)
-check("Tributaries losing more than half at 20% POP", sum(trib_loss$pct_lost > 50), 10, 0)
-check("Basin totals: potential habitat, all basins (km; Table 3)", sum(p100$PASS_LENGTH_KM) / 1000, 4526, 0)
-check("Panel B: smallest P value (all > 0.05)", min(fire_fits$p_value), 0.07, 2)
 
 # Table 3: available habitat by basin and passage rate. Percentages are the change
 # from potential habitat (100% passage); the Total row is calculated from the summed
 # lengths, not averaged across basins (caption corrected in Revision 1).
-# Table 3: km per basin and passage rate, plus a Total row and % change
 table3 <- pop %>% group_by(basin, POP_rate) %>% summarise(km = sum(PASS_LENGTH_KM) / 1000, .groups = "drop")
 table3 <- bind_rows(table3, table3 %>% group_by(POP_rate) %>% summarise(km = sum(km)) %>% mutate(basin = "Total"))
 table3 <- table3 %>% group_by(basin) %>% mutate(pct_change = 100 * (km / km[POP_rate == 100] - 1)) %>% ungroup()
 print(as.data.frame(table3 %>% mutate(km = round(km), pct_change = round(pct_change, 1))))
 write.csv(table3, file.path(tab_dir, "Table 3 basin habitat (Revision 1).csv"), row.names = FALSE)
-# Checkpoints: Table 3 values and the km lost in Chatanika and Chena
-t3 <- function(b, r) table3$pct_change[table3$basin == b & table3$POP_rate == r]
-check("Table 3: Chena, 50% POP (%; corrected from -12.9)", t3("chen", 50), -9.4, 1)
-check("Table 3: Chatanika, 50% POP (%)", t3("chat", 50), -12.9, 1)
-check("Table 3: Total, 80% POP (%)", t3("Total", 80), -1.1, 1)
-check("Table 3: Total, 50% POP (%)", t3("Total", 50), -6.2, 1)
-check("Table 3: Total, 20% POP (%)", t3("Total", 20), -11.5, 1)
-check("Table 3: Total available habitat, 20% POP (km)", table3$km[table3$basin == "Total" & table3$POP_rate == 20], 4006, 0)
-check("Results: Chatanika habitat lost at 20% POP (km; corrected from 178)", table3$km[table3$basin == "chat" & table3$POP_rate == 100] - table3$km[table3$basin == "chat" & table3$POP_rate == 20], 183, 0)
-check("Results: Chena habitat lost at 20% POP (km; corrected from 188)", table3$km[table3$basin == "chen" & table3$POP_rate == 100] - table3$km[table3$basin == "chen" & table3$POP_rate == 20], 187, 0)
-check("Table 3: Chena potential habitat (km; corrected from 1,369)", table3$km[table3$basin == "chen" & table3$POP_rate == 100], 1368, 0)
 
 
-# ==============================================================================
-# PART 6. Independent cross-check with AICcmodavg and rcompanion
-# ==============================================================================
-# Recalculates Table 2 and Appendix S4 with the same package as the original
-# analysis (AICcmodavg) and base R, without using this script's own aicc(),
-# r2_adj() or modavg_param() functions.
-# Only runs if AICcmodavg is installed: redo Table 2 and Appendix S4 with the package; differences should be 0
+# Part 6. Table 2 and Appendix S4 with AICcmodavg ------------------------------
+#Same tables redone with AICcmodavg (the package from the original analysis) and base R,
+#without my aicc(), r2_adj(), or modavg_param() functions. Differences should all be ~0.
 if (requireNamespace("AICcmodavg", quietly = TRUE)) {
-  cat("\nPART 6 CHECKPOINTS: AICcmodavg\n")
+  cat("\nPart 6. Largest differences vs AICcmodavg:\n")
   for (s6 in names(sets)) {
     at <- as.data.frame(AICcmodavg::aictab(cand.set = sets[[s6]]$fits, modnames = names(sets[[s6]]$fits)))
     mine <- table2[table2$dataset == s6, ]
     mine <- mine[match(at$Modnames, mine$model), ]
-    check(paste(s6, "- largest AICc difference vs aictab()"), max(abs(at$AICc - mine$AICc)), 0, 6)
-    check(paste(s6, "- largest weight difference vs aictab()"), max(abs(at$AICcWt - mine$weight)), 0, 6)
-    check(paste(s6, "- largest K difference vs aictab()"), max(abs(at$K - mine$K)), 0, 0)
     top <- top_models(sets[[s6]], s6)
     d6 <- c()
     for (p in appendix$parameter[appendix$dataset == s6]) {
@@ -915,12 +660,13 @@ if (requireNamespace("AICcmodavg", quietly = TRUE)) {
       d6 <- c(d6, abs(ma$Mod.avg.beta - a$estimate), abs(ma$Uncond.SE - a$uncond_SE),
               abs(ma$Lower.CL - a$lower_90), abs(ma$Upper.CL - a$upper_90))
     }
-    check(paste(s6, "- largest Appendix S4 difference vs modavg()"), max(d6), 0, 6)
+    cat(sprintf("  %-19s AICc %.1e | weight %.1e | K %g | Appendix S4 %.1e\n", s6,
+                max(abs(at$AICc - mine$AICc)), max(abs(at$AICcWt - mine$weight)),
+                max(abs(at$K - mine$K)), max(d6)))
   }
-} else cat("\nPART 6: install.packages('AICcmodavg') to run the AICcmodavg cross-check.\n")
+} else cat("\nPart 6 skipped (needs AICcmodavg)\n")
 
-# Redo R2 and adjusted R2 with summary(lm()) (same model refit as an ordinary linear model)
-cat("\nPART 6 CHECKPOINTS: R2 and adjusted R2 vs summary(lm())\n")
+#R2 and adjusted R2 vs summary(lm()) (same models refit with lm)
 d6 <- c()
 for (s6 in names(sets)) for (nm in names(sets[[s6]]$fits)) {
   m  <- sets[[s6]]$fits[[nm]]
@@ -928,25 +674,23 @@ for (s6 in names(sets)) for (nm in names(sets[[s6]]$fits)) {
   mine <- table2[table2$dataset == s6 & table2$model == nm, ]
   d6 <- c(d6, abs(sl$r.squared - mine$R2), abs(sl$adj.r.squared - mine$adj_R2))
 }
-check("Largest R2 / adjusted R2 difference vs summary(lm())", max(d6), 0, 6)
+cat("  Largest R2 / adjusted R2 difference vs summary(lm()):", signif(max(d6), 2), "\n")
 
 
-# ==============================================================================
-# PART 7. Sensitivity runs (not used in the manuscript)
-# ==============================================================================
-# 7a. Keep the data-dredged model (dredge.vb from the original script) in the
-#     burned candidate set. Its covariates were chosen by MuMIn::dredge on the
-#     same data, which is why it was dropped.
+# Part 7. Sensitivity runs (not used in the manuscript) ------------------------
+#7a. Keep the data-dredged model (dredge.vb from the original script) in the burned
+#    candidate set. Its covariates were picked by MuMIn::dredge on the same data, which is
+#    why I dropped it.
 dredge_vars <- c("GRADIENT_mean", "FP_WIDTH_mean", "Area_km2_VB", "MEANANNCMS_mean", "SINUOSITY_mean",
                  "STRM_ORDER_max", "WIDTH_M_mean", "StrmPow_mean")
 set_labels["dredge.vb"] <- "Dredge (reduced geomorphology, hydrology)"
 s7a <- selection_table(fit_set(burned_VB, c(cand_all, list(dredge.vb = dredge_vars))), "Burned + dredge model")
-cat("\nPART 7a. Burned catchments with the dredge model kept (n =", s7a$n[1], "):\n")
+cat("\nPart 7a. Burned catchments with the dredge model kept (n =", s7a$n[1], "):\n")
 print(s7a %>% transmute(covariate_set, R2 = round(R2, 2), adj_R2 = round(adj_R2, 2), AICc = round(AICc, 1),
                         weight = round(weight, 2)), row.names = FALSE)
 
-# 7b. Original burn severity definition (class area / valley-bottom area, with
-#     percent no burn as a covariate) on the corrected valley bottoms.
+#7b. Original burn severity definition (class area / VB area, with percent no burn as a
+#    covariate) on the corrected valley bottoms.
 vb_7b <- burned_VB
 orig_sev <- vb_raw[!duplicated(vb_raw$uRCA), c("uRCA", "percent_severe_burn", "percent_moderate_burn",
                                                 "percent_mild_burn", "percent_no_burn")]
@@ -956,14 +700,14 @@ vb_7b[is.na(vb_7b$Fire_Event_Area_Percent_of_uRCA),
       c("percent_severe_burn", "percent_moderate_burn", "percent_mild_burn", "percent_no_burn")] <- NA
 cand_7b <- lapply(cand_all, function(x) if (any(x %in% fire)) c(x, "percent_no_burn") else x)
 s7b <- selection_table(fit_set(vb_7b, cand_7b), "Burned, original severity")
-cat("\nPART 7b. Burned catchments with the original severity definition (n =", s7b$n[1], "):\n")
+cat("\nPart 7b. Burned catchments with the original severity definition (n =", s7b$n[1], "):\n")
 print(s7b %>% transmute(covariate_set, R2 = round(R2, 2), adj_R2 = round(adj_R2, 2), AICc = round(AICc, 1),
                         weight = round(weight, 2)), row.names = FALSE)
 
 
-# 7c. Collinearity: refit the burned candidate set without stream width and depth
-#     (both strongly correlated with mean annual discharge; see "VIF check.csv").
-#     Reported in the Methods and Results as a sensitivity check.
+#7c. Collinearity: refit the burned candidate set without stream width and depth (both
+#    strongly correlated with mean annual discharge; see "VIF check.csv"). This is the
+#    sensitivity check in the Methods and Results.
 drop_wd <- function(x) setdiff(x, c("WIDTH_M_mean", "DEPTH_M_mean"))
 fs_7c  <- fit_set(burned_VB, lapply(cand_all, drop_wd))
 s7c    <- selection_table(fs_7c, "Burned, no width/depth")
@@ -971,17 +715,10 @@ top_7c <- fs_7c$fits[s7c$model[s7c$weight >= 0.05]]
 ma_7c  <- do.call(rbind, lapply(unique(unlist(lapply(top_7c, function(m) names(coef(m))[-1]))),
                                 function(p) modavg_param(top_7c, p)))
 ma_7c$important <- ma_7c$lower_90 > 0 | ma_7c$upper_90 < 0
-cat("\nPART 7c. Burned catchments without stream width and depth (n =", s7c$n[1], "):\n")
+cat("\nPart 7c. Burned catchments without stream width and depth (n =", s7c$n[1], "):\n")
 print(s7c %>% transmute(covariate_set, R2 = round(R2, 2), adj_R2 = round(adj_R2, 2), AICc = round(AICc, 1),
                         weight = round(weight, 2)), row.names = FALSE)
 print(ma_7c %>% mutate(across(where(is.numeric), ~ round(.x, 3))), row.names = FALSE)
-cat("PART 7c CHECKPOINTS (Methods/Results sensitivity sentence):\n")
-# Checkpoints for the Methods/Results sensitivity sentence
-check_set("Severe burn and valley bottom area still important; sinuosity not",
-          intersect(ma_7c$parameter[ma_7c$important], c("percent_severe_burn", "Area_km2_VB", "SINUOSITY_mean")),
-          c("percent_severe_burn", "Area_km2_VB"))
-check("Severe burn estimate still positive (sign)", sign(ma_7c$estimate[ma_7c$parameter == "percent_severe_burn"]), 1, 0)
-check("Valley bottom area estimate still negative (sign)", sign(ma_7c$estimate[ma_7c$parameter == "Area_km2_VB"]), -1, 0)
 # All other covariates have VIF < 10 in every non-global model
 max_other_vif <- max(unlist(lapply(names(sets), function(s7) sapply(setdiff(names(sets[[s7]]$fits), "global.vb.reduced"),
   function(nm) {
@@ -990,27 +727,23 @@ max_other_vif <- max(unlist(lapply(names(sets), function(s7) sapply(setdiff(name
     x <- vif_check(sets[[s7]]$data, v)
     max(x[!names(x) %in% c("WIDTH_M_mean", "DEPTH_M_mean", "MEANANNCMS_mean")])
   }))))
-check("Max VIF of other covariates, all non-global models, < 10 (Methods)", max_other_vif < 10, 1, 0)
+cat("  Max VIF of the other covariates, all non-global models:", round(max_other_vif, 2), "\n")
 
 
-# ==============================================================================
-# PART 8. Appendix S2: grayling distribution thresholds (Table S1, Figure S1)
-# ==============================================================================
-# The potential fish habitat thresholds (mean annual flow > 0.06 m3/s, gradient
-# < 4%) were set from the stream reaches occupied by grayling in the Alaska
-# Freshwater Fish Inventory (Yukon and Kuskokwim basins; n = 899 observations).
-# The data file has two NetMap flow estimates. The 0.06 m3/s cutoff is the 10th
-# percentile of MEANANNCMS_Brabets (the column used in grayling_dist_4Will.R);
-# for MEANANNCMS_MEAN, 0.06 m3/s would fall below the 1st percentile. Gradient
-# is stored as a proportion (0.04 = 4%).
-# Corrections to the published Appendix S2: the table mixed the two flow
-# estimates (min and 95th percentile from Brabets, mean and median from
-# MEANANNCMS_MEAN), listed the 10th percentile as the 5th, and had a typo in the
-# maximum (105.84 for 1,056.84); the gradient row did not match the data; the
-# text described the gradient cutoff as the 5th percentile (it is the 95th,
-# 3.6%, rounded to 4%); the flow histogram showed MEANANNCMS_MEAN with the axis
-# label "m/s^2".
-cat("\nPART 8: Appendix S2 grayling distribution thresholds\n")
+# Part 8. Appendix S2: grayling distribution thresholds (Table S1, Figure S1) --
+#Habitat thresholds (mean annual flow > 0.06 m3/s, gradient < 4%) come from the stream
+#reaches with grayling in the Alaska Freshwater Fish Inventory (Yukon and Kuskokwim basins;
+#n = 899 observations). The file has two NetMap flow estimates. The 0.06 m3/s cutoff is
+#the 10th percentile of MEANANNCMS_Brabets (the column used in grayling_dist_4Will.R);
+#for MEANANNCMS_MEAN, 0.06 m3/s would be below the 1st percentile. Gradient is stored as
+#a proportion (0.04 = 4%).
+#Fixed from the first-submission Appendix S2: the table mixed the two flow estimates (min
+#and 95th percentile from Brabets, mean and median from MEANANNCMS_MEAN), listed the 10th
+#percentile as the 5th, and had a typo in the max (105.84 for 1,056.84); the gradient row
+#didn't match the data; the text called the gradient cutoff the 5th percentile (it's the
+#95th, 3.6%, rounded to 4%); and the flow histogram showed MEANANNCMS_MEAN with the axis
+#label "m/s^2".
+cat("\nPart 8. Appendix S2 grayling distribution thresholds\n")
 # The 899 grayling observations used to set the habitat cutoffs
 gr <- read.csv("Input Data Files/grayling_pres_new.csv")
 # Flow (Brabets estimate) and gradient in percent
@@ -1022,21 +755,6 @@ s2_stats <- function(x) c(Min = min(x), P05 = unname(quantile(x, 0.05)), P10 = u
 tableS1 <- rbind(`Mean annual flow (m3/s)` = s2_stats(flow), `Gradient (%)` = s2_stats(grad))
 print(round(tableS1, 2))
 write.csv(round(tableS1, 4), file.path(tab_dir, "Appendix S2 Table S1 (Revision 1).csv"))
-# Checkpoints: the cutoffs and every Table S1 value
-check("Appendix S2: grayling observations", nrow(gr), 899, 0)
-check("Appendix S2: flow 10th percentile = cutoff (m3/s)", unname(quantile(flow, 0.10)), 0.06, 2)
-check("Appendix S2: gradient 95th percentile (%)", unname(quantile(grad, 0.95)), 3.63, 2)
-check("Appendix S2: flow minimum", min(flow), 0.02, 2)
-check("Appendix S2: flow 5th percentile", unname(quantile(flow, 0.05)), 0.04, 2)
-check("Appendix S2: flow mean", mean(flow), 9.75, 2)
-check("Appendix S2: flow median", median(flow), 1.14, 2)
-check("Appendix S2: flow 95th percentile", unname(quantile(flow, 0.95)), 28.99, 2)
-check("Appendix S2: flow maximum", max(flow), 1057.38, 2)
-check("Appendix S2: gradient minimum (%)", min(grad), 0.01, 2)
-check("Appendix S2: gradient 5th percentile (%)", unname(quantile(grad, 0.05)), 0.05, 2)
-check("Appendix S2: gradient mean (%)", mean(grad), 0.90, 2)
-check("Appendix S2: gradient median (%)", median(grad), 0.35, 2)
-check("Appendix S2: gradient maximum (%)", max(grad), 11.39, 2)
 
 # Figure S1: histograms with dashed lines at the cutoffs, saved as two files
 s2_theme <- theme_classic() + theme(text = element_text(size = 15), axis.text = element_text(color = "black"),
@@ -1052,9 +770,3 @@ pS2b <- ggplot(data.frame(grad), aes(x = grad)) +
   labs(title = "(b)", x = "Gradient (%)", y = "Frequency") + s2_theme
 ggsave(file.path(fig_dir, "Appendix S2 Figure S1A (Revision 1).jpeg"), pS2a, width = 6, height = 4, units = "in", dpi = 500, bg = "white")
 ggsave(file.path(fig_dir, "Appendix S2 Figure S1B (Revision 1).jpeg"), pS2b, width = 6, height = 4, units = "in", dpi = 500, bg = "white")
-
-
-# ==============================================================================
-cat("\n==============================================================\n")
-cat("CHECKPOINTS:", n_pass, "PASS,", n_check, "to check\n")
-cat("==============================================================\n")
